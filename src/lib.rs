@@ -30,6 +30,10 @@ impl<T> ConstPtr<T> {
   pub fn null(&self) -> bool {
     self.0.is_null()
   }
+
+  pub fn present(&self) -> bool {
+    !self.null()
+  }
 }
 
 impl<T> AsRef<T> for ConstPtr<T> {
@@ -98,6 +102,10 @@ impl<T> MutPtr<T> {
 
   pub fn null(&self) -> bool {
     self.0.is_null()
+  }
+
+  pub fn present(&self) -> bool {
+    !self.null()
   }
 }
 
