@@ -27,7 +27,7 @@ impl<T> ConstPtr<T> {
   }
 
   pub fn null(&self) -> bool {
-    self.0 == ptr::null()
+    self.0.is_null()
   }
 }
 
@@ -96,7 +96,7 @@ impl<T> MutPtr<T> {
   }
 
   pub fn null(&self) -> bool {
-    self.0 == ptr::null_mut()
+    self.0.is_null()
   }
 }
 
@@ -150,5 +150,114 @@ pub trait AsPtr {
     Self: Sized,
   {
     MutPtr(self)
+  }
+}
+
+pub struct SmartPtr<T> {
+  ptr: MutPtr<T>,
+  rc: MutPtr<usize>,
+}
+
+impl<T> SmartPtr<T> {
+  pub fn new(item: T) -> Self {
+    let item = Box::leak(Box::new(item));
+    let ptr = MutPtr::new(item);
+    let rc = Box::new(1usize);
+    let rc = Box::leak(rc);
+    let rc = MutPtr::new(rc);
+
+    Self { ptr, rc }
+  }
+
+  pub fn count(&self) -> usize {
+    *self.rc
+  }
+}
+
+impl<T> Drop for SmartPtr<T> {
+  fn drop(&mut self) {
+    *self.rc -= 1;
+    if *self.rc == 0 {
+      unsafe {
+        Box::from_raw(self.ptr.raw());
+        Box::from_raw(self.rc.raw());
+      }
+    }
+  }
+}
+
+impl<T> Deref for SmartPtr<T> {
+  type Target = MutPtr<T>;
+  fn deref(&self) -> &Self::Target {
+    &self.ptr
+  }
+}
+
+impl<T> DerefMut for SmartPtr<T> {
+  fn deref_mut(&mut self) -> &mut Self::Target {
+    &mut self.ptr
+  }
+}
+
+impl<T> Clone for SmartPtr<T> {
+  fn clone(&self) -> Self {
+    let ptr = self.ptr;
+    let mut rc = self.rc;
+
+    *rc += 1;
+
+    Self { ptr, rc }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn smart_pointer_drops() {
+    struct Test {
+      f: Box<dyn FnMut()>,
+    }
+
+    impl Test {
+      fn new(f: Box<dyn FnMut()>) -> Self {
+        Self { f }
+      }
+    }
+
+    impl Drop for Test {
+      fn drop(&mut self) {
+        (*self.f)();
+      }
+    }
+
+    let mut dropped = false;
+
+    {
+      let mut dropped_ptr = MutPtr::new(&mut dropped);
+      let test = Test::new(Box::new(move || {
+        *dropped_ptr = true;
+      }));
+      assert!(!dropped);
+
+      let test_ptr = SmartPtr::new(test);
+      assert!(!dropped);
+
+      assert_eq!(test_ptr.count(), 1);
+
+      {
+        let test_ptr_cpy = test_ptr.clone();
+        assert!(!dropped);
+
+        assert_eq!(test_ptr.count(), 2);
+        assert_eq!(test_ptr_cpy.count(), 2);
+      }
+
+      assert_eq!(test_ptr.count(), 1);
+      assert!(!dropped);
+    }
+
+    assert!(dropped);
   }
 }
