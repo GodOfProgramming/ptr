@@ -34,6 +34,10 @@ impl<T> ConstPtr<T> {
   pub fn present(&self) -> bool {
     !self.null()
   }
+
+  pub fn clear(&mut self) {
+    self.0 = ptr::null();
+  }
 }
 
 impl<T> AsRef<T> for ConstPtr<T> {
@@ -107,6 +111,10 @@ impl<T> MutPtr<T> {
   pub fn present(&self) -> bool {
     !self.null()
   }
+
+  pub fn clear(&mut self) {
+    self.0 = ptr::null_mut();
+  }
 }
 
 impl<T> AsRef<T> for MutPtr<T> {
@@ -162,7 +170,6 @@ pub trait AsPtr {
   }
 }
 
-#[derive(Default)]
 pub struct SmartPtr<T> {
   ptr: MutPtr<T>,
   rc: MutPtr<usize>,
@@ -180,7 +187,18 @@ impl<T> SmartPtr<T> {
   }
 
   pub fn valid(&self) -> bool {
-    !self.ptr.null() && !self.rc.null() && *self.rc > 0
+    self.ptr.present() && self.rc.present() && *self.rc > 0
+  }
+
+  pub fn take(&mut self) -> Self {
+    let copy = self.clone();
+
+    *self.rc -= 1;
+
+    self.ptr.clear();
+    self.rc.clear();
+
+    copy
   }
 
   pub fn access(&self) -> &T {
@@ -194,6 +212,15 @@ impl<T> SmartPtr<T> {
   #[cfg(test)]
   pub fn count(&self) -> usize {
     *self.rc
+  }
+}
+
+impl<T> Default for SmartPtr<T> {
+  fn default() -> Self {
+    Self {
+      ptr: Default::default(),
+      rc: Default::default(),
+    }
   }
 }
 

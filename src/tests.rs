@@ -1,4 +1,3 @@
-
 use super::*;
 
 #[test]
@@ -46,4 +45,41 @@ fn smart_pointer_drops() {
   }
 
   assert!(dropped);
+}
+
+#[test]
+fn smart_pointer_keeps_alive() {
+  struct TestStruct {
+    ptr: SmartPtr<usize>,
+  }
+
+  impl TestStruct {
+    fn new(mut ptr: SmartPtr<usize>) -> Self {
+      **ptr = 1;
+      Self { ptr }
+    }
+  }
+
+  {
+    let t: TestStruct;
+
+    {
+      let ptr = SmartPtr::new(0usize);
+      t = TestStruct::new(ptr);
+    }
+
+    assert!(t.ptr.valid());
+    assert_eq!(**t.ptr, 1);
+  }
+  {
+    let ptr = SmartPtr::new(0usize);
+
+    {
+      let t: TestStruct;
+      t = TestStruct::new(ptr.clone());
+    }
+
+    assert!(ptr.valid());
+    assert_eq!(**ptr, 1);
+  }
 }
