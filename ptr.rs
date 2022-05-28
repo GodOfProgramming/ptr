@@ -1,5 +1,6 @@
 use std::{
   cell::RefCell,
+  fmt::{Debug, Display, Error, Formatter},
   ops::{Deref, DerefMut},
   ptr,
   rc::Rc,
@@ -153,6 +154,7 @@ pub trait AsPtr {
   }
 }
 
+#[derive(Default)]
 pub struct SmartPtr<T> {
   ptr: MutPtr<T>,
   rc: MutPtr<usize>,
@@ -169,6 +171,19 @@ impl<T> SmartPtr<T> {
     Self { ptr, rc }
   }
 
+  pub fn valid(&self) -> bool {
+    !self.ptr.null() && !self.rc.null() && *self.rc > 0
+  }
+
+  pub fn access(&self) -> &T {
+    &self.ptr
+  }
+
+  pub fn access_mut(&mut self) -> &mut T {
+    &mut self.ptr
+  }
+
+  #[cfg(test)]
   pub fn count(&self) -> usize {
     *self.rc
   }
@@ -207,6 +222,24 @@ impl<T> Clone for SmartPtr<T> {
     *rc += 1;
 
     Self { ptr, rc }
+  }
+}
+
+impl<T: Debug> Debug for SmartPtr<T> {
+  fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+    self.ptr.fmt(f)
+  }
+}
+
+impl<T: Display> Display for SmartPtr<T> {
+  fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+    self.ptr.fmt(f)
+  }
+}
+
+impl<T: PartialEq> PartialEq<T> for SmartPtr<T> {
+  fn eq(&self, other: &T) -> bool {
+    self.ptr.eq(other)
   }
 }
 
