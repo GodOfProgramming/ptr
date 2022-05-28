@@ -220,14 +220,16 @@ impl<T> Default for SmartPtr<T> {
 
 impl<T> Drop for SmartPtr<T> {
   fn drop(&mut self) {
-    *self.rc -= 1;
-    if *self.rc == 0 {
-      unsafe {
-        if !*self.localized {
-          Box::from_raw(self.ptr.raw());
+    if self.valid() {
+      *self.rc -= 1;
+      if *self.rc == 0 {
+        unsafe {
+          if !*self.localized {
+            Box::from_raw(self.ptr.raw());
+          }
+          Box::from_raw(self.rc.raw());
+          Box::from_raw(self.localized.raw());
         }
-        Box::from_raw(self.rc.raw());
-        Box::from_raw(self.localized.raw());
       }
     }
   }
