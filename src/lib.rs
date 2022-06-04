@@ -272,8 +272,8 @@ impl<T: Display> Display for SmartPtr<T> {
   }
 }
 
-impl<T: PartialEq> PartialEq<T> for SmartPtr<T> {
-  fn eq(&self, other: &T) -> bool {
+impl<T: PartialEq> PartialEq<SmartPtr<T>> for SmartPtr<T> {
+  fn eq(&self, other: &Self) -> bool {
     self.ptr.eq(other)
   }
 }
