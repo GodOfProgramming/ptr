@@ -225,10 +225,10 @@ impl<T> Drop for SmartPtr<T> {
       if *self.rc == 0 {
         unsafe {
           if !*self.localized {
-            Box::from_raw(self.ptr.raw());
+            let _ = Box::from_raw(self.ptr.raw());
           }
-          Box::from_raw(self.rc.raw());
-          Box::from_raw(self.localized.raw());
+          let _ = Box::from_raw(self.rc.raw());
+          let _ = Box::from_raw(self.localized.raw());
         }
       }
     }
