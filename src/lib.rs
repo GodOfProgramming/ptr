@@ -48,7 +48,7 @@ impl<T> AsRef<T> for ConstPtr<T> {
 
 impl<T> Clone for ConstPtr<T> {
   fn clone(&self) -> Self {
-    Self(self.0)
+    *self
   }
 }
 
@@ -89,7 +89,7 @@ impl<T> Default for MutPtr<T> {
 
 impl<T> Clone for MutPtr<T> {
   fn clone(&self) -> Self {
-    Self(self.0)
+    *self
   }
 }
 
