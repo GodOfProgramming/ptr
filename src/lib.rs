@@ -173,25 +173,18 @@ pub trait AsPtr {
 pub struct SmartPtr<T> {
   ptr: MutPtr<T>,
   rc: MutPtr<usize>,
-  localized: MutPtr<bool>,
 }
 
 impl<T> SmartPtr<T> {
   pub fn new(item: T) -> Self {
     let ptr = MutPtr::new(Box::leak(Box::new(item)));
-    let rc = MutPtr::new(Box::leak(Box::new(1usize)));
-    let localized = MutPtr::new(Box::leak(Box::new(false)));
+    let rc = Self::new_ref_count();
 
-    Self { ptr, rc, localized }
+    Self { ptr, rc }
   }
 
   pub fn valid(&self) -> bool {
     self.ptr.present() && self.rc.present() && *self.rc > 0
-  }
-
-  pub fn localize(mut self) -> T {
-    *self.localized = true;
-    unsafe { *Box::from_raw(self.ptr.raw()) }
   }
 
   pub fn access(&self) -> &T {
@@ -206,14 +199,17 @@ impl<T> SmartPtr<T> {
   pub fn count(&self) -> usize {
     *self.rc
   }
+
+  fn new_ref_count() -> MutPtr<usize> {
+    MutPtr::new(Box::leak(Box::new(1usize)))
+  }
 }
 
 impl<T> Default for SmartPtr<T> {
   fn default() -> Self {
     Self {
-      ptr: Default::default(),
-      rc: Default::default(),
-      localized: Default::default(),
+      ptr: MutPtr::default(),
+      rc: Self::new_ref_count(),
     }
   }
 }
@@ -224,11 +220,8 @@ impl<T> Drop for SmartPtr<T> {
       *self.rc -= 1;
       if *self.rc == 0 {
         unsafe {
-          if !*self.localized {
-            let _ = Box::from_raw(self.ptr.raw());
-          }
+          let _ = Box::from_raw(self.ptr.raw());
           let _ = Box::from_raw(self.rc.raw());
-          let _ = Box::from_raw(self.localized.raw());
         }
       }
     }
@@ -252,11 +245,10 @@ impl<T> Clone for SmartPtr<T> {
   fn clone(&self) -> Self {
     let ptr = self.ptr;
     let mut rc = self.rc;
-    let localized = self.localized;
 
     *rc += 1;
 
-    Self { ptr, rc, localized }
+    Self { ptr, rc }
   }
 }
 
