@@ -205,12 +205,12 @@ impl<T> SmartPtr<T> {
   }
 }
 
-impl<T> Default for SmartPtr<T> {
+impl<T> Default for SmartPtr<T>
+where
+  T: Default,
+{
   fn default() -> Self {
-    Self {
-      ptr: MutPtr::default(),
-      rc: Self::new_ref_count(),
-    }
+    Self::new(T::default())
   }
 }
 
