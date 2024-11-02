@@ -79,6 +79,12 @@ impl<T> From<&Box<T>> for ConstPtr<T> {
   }
 }
 
+impl<T> From<*const T> for ConstPtr<T> {
+  fn from(value: *const T) -> Self {
+    Self(value)
+  }
+}
+
 pub struct MutPtr<T: ?Sized>(*mut T);
 
 impl<T> Default for MutPtr<T> {
@@ -151,6 +157,12 @@ impl<T> From<&mut Box<T>> for MutPtr<T> {
 impl<T> From<Rc<RefCell<T>>> for MutPtr<T> {
   fn from(ptr: Rc<RefCell<T>>) -> Self {
     Self(ptr.as_ptr())
+  }
+}
+
+impl<T> From<*mut T> for MutPtr<T> {
+  fn from(value: *mut T) -> Self {
+    Self(value)
   }
 }
 
