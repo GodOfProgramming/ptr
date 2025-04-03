@@ -75,8 +75,7 @@ fn smart_pointer_keeps_alive() {
     let ptr = SmartPtr::new(0usize);
 
     {
-      let _t: TestStruct;
-      _t = TestStruct::new(ptr.clone());
+      let _t = TestStruct::new(ptr.clone());
     }
 
     assert!(ptr.valid());

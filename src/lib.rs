@@ -282,5 +282,32 @@ impl<T: PartialEq> PartialEq<SmartPtr<T>> for SmartPtr<T> {
   }
 }
 
+#[cfg(feature = "serde")]
+impl<T> serde::Serialize for SmartPtr<T>
+where
+  T: serde::Serialize,
+{
+  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+  where
+    S: serde::Serializer,
+  {
+    <T as serde::Serialize>::serialize(self, serializer)
+  }
+}
+
+#[cfg(feature = "serde")]
+impl<'de, T> serde::Deserialize<'de> for SmartPtr<T>
+where
+  T: serde::Deserialize<'de>,
+{
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+    D: serde::Deserializer<'de>,
+  {
+    let value = <T as serde::Deserialize>::deserialize(deserializer)?;
+    Ok(SmartPtr::new(value))
+  }
+}
+
 #[cfg(test)]
 mod tests;
